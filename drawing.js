@@ -4,6 +4,14 @@ const Y_SIZE = 12;
 // Level
 const LEVEL1 = 1;
 const LEVEL2 = 2;
+const LEVEL3 = 3;
+const LEVEL4 = 4;
+const LEVEL5 = 5;
+const LEVEL6 = 6;
+const LEVEL7 = 7;
+const LEVEL8 = 8;
+const LEVEL9 = 9;
+const LEVEL10 = 10;
 // Image
 const WALL = 1;
 const SOKO = 2;
@@ -50,6 +58,12 @@ function onDraw(ctx) {
 
 // Level up
 function levelUp(level) {
+	for (var i = 0; i < SokoBanMap.length; i++) {
+		SokoBanMap[i] = new Array(Y_SIZE);
+		SokoBanCategoryMap[i] = new Array(Y_SIZE);
+	}
+	iPositionNum = 0;
+	currentLevel = level;
 	UNITX = context.canvas.width / X_SIZE;
 	UNITY = context.canvas.width / Y_SIZE;
 	preCreateSokoBan(level);
@@ -66,7 +80,7 @@ function levelUp(level) {
 }
 
 // move to left
-function move_left() {
+function move_left() { 
 	var bMoveFlg = false;
 	if (Person_X - 1 >= 0) {
 		leftPos = Person_X - 1;
@@ -980,15 +994,15 @@ function getBlockMap(iCategory) {
 
 // Get the iPositionNum
 function getPositionNum() {
-		var iPNum = iPositionNum;
-		for (var i = 0; i < X_SIZE; i++) {
-			for (var j = 0; j < Y_SIZE; j++) {
-				if (SokoBanCategoryMap[i][j] == POSITION
-						&& SokoBanMap[i][j] == BOX_OVER) {
-					iPNum--;
-				}
+	var iPNum = iPositionNum;
+	for (var i = 0; i < X_SIZE; i++) {
+		for (var j = 0; j < Y_SIZE; j++) {
+			if (SokoBanCategoryMap[i][j] == POSITION
+					&& SokoBanMap[i][j] != POSITION) {
+				iPNum--;
 			}
 		}
-		
-		return iPNum;
+	}
+	
+	return iPNum;
 }
