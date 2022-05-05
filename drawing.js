@@ -37,7 +37,18 @@ for (var i = 0; i < SokoBanMap.length; i++) {
 UNITX = 0;
 UNITY = 0;
 
+STARTX = 20;
+STARTY = 50;
+
 context = null;
+
+var iUndoCount = 0;
+var iRedoCount = 0;
+var undoList = [];
+var redoList = [];
+
+var iSokoBanStep = 0;
+
 // Draw sokoban
 function onDraw(ctx) {
 	context = ctx;
@@ -46,37 +57,53 @@ function onDraw(ctx) {
 	preCreateSokoBan(currentLevel);
 
 	ctx.beginPath();
-	for (var i = 0; i < X_SIZE; i++) {
-		for (var j = 0; j < Y_SIZE; j++) {
-			var image = getBlockMap(SokoBanMap[i][j]);
-			if (image != null) {			
-				ctx.drawImage(image, i * UNITX, j * UNITY);
-			}
-		}
-	}
+	drawSokoban();
+	ctx.closePath()
 }
 
 // Level up
 function levelUp(level) {
+	iSokoBanStep = 0;
+	iUndoCount = 0;
+	iRedoCount = 0;
+	undoList.length = 0;
+	redoList.length = 0;
+
 	for (var i = 0; i < SokoBanMap.length; i++) {
 		SokoBanMap[i] = new Array(Y_SIZE);
 		SokoBanCategoryMap[i] = new Array(Y_SIZE);
 	}
+	context.clearRect(0, 0, context.width, context.height);
+	context.beginPath();
+	context.fillStyle = "black"
+	var name = "Level " + currentLevel;
+	context.fillText(name, 200, 50);
 	iPositionNum = 0;
 	currentLevel = level;
 	UNITX = context.canvas.width / X_SIZE;
 	UNITY = context.canvas.width / Y_SIZE;
 	preCreateSokoBan(level);
+	drawSokoban();
+	context.closePath();
+}
 
-	context.beginPath();
+// draw sokoban
+function drawSokoban() {
+	context.fillStyle = "white"
+	context.font = "30px Arial";
+	var name = "Level " + currentLevel;
+	context.fillText(name, 200, 50);
 	for (var i = 0; i < X_SIZE; i++) {
 		for (var j = 0; j < Y_SIZE; j++) {
 			var image = getBlockMap(SokoBanMap[i][j]);
-			if (image != null) {			
-				context.drawImage(image, i * UNITX, j * UNITY);
+			if (image != null) {
+				context.drawImage(image, STARTX + i * UNITX, STARTY + j * UNITY);
 			}
 		}
 	}
+
+	var pSteps = document.getElementById("steps");
+	pSteps.innerHTML = "Move: " + iSokoBanStep;
 }
 
 // move to left
@@ -84,14 +111,24 @@ function move_left() {
 	var bMoveFlg = false;
 	if (Person_X - 1 >= 0) {
 		leftPos = Person_X - 1;
+		if (SokoBanMap[leftPos][Person_Y] == POSITION) {
+			return;
+		}
+		if (SokoBanMap[leftPos][Person_Y] == POSITION) {
+			return;
+		}
 		if (SokoBanMap[leftPos - 1][Person_Y] == SOKO) {
 			if (SokoBanMap[leftPos][Person_Y] == BOX) {
+				insertUndoMap();
 				SokoBanMap[leftPos - 1][Person_Y] = BOX;
 			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[leftPos - 1][Person_Y] == POSITION) {
-			SokoBanMap[leftPos - 1][Person_Y] = BOX_OVER;
+			if (SokoBanMap[leftPos][Person_Y] == BOX) {
+				insertUndoMap();
+				SokoBanMap[leftPos - 1][Person_Y] = BOX_OVER;
+			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[leftPos][Person_Y] == SOKO) {
@@ -99,19 +136,15 @@ function move_left() {
 		}
 	}
 	if (bMoveFlg) {
+		iSokoBanStep++;
+		redoList.length = 0;
+		iRedoCount = 0;
 		context.clearRect(0, 0, context.width, context.height);
 		context.beginPath();
 		SokoBanMap[leftPos][Person_Y] = PERSON;
 		SokoBanMap[Person_X][Person_Y] = SOKO;
 		Person_X = leftPos;
-		for (var i = 0; i < X_SIZE; i++) {
-			for (var j = 0; j < Y_SIZE; j++) {
-				var image = getBlockMap(SokoBanMap[i][j]);
-				if (image != null) {
-					context.drawImage(image, i * UNITX, j * UNITY);
-				}
-			}
-		}
+		drawSokoban();
 		context.closePath();
 	}
 	if (getPositionNum() == 0) {
@@ -124,14 +157,25 @@ function move_right() {
 	var bMoveFlg = false;
 	if (Person_X + 1 < X_SIZE) {
 		rightPos = Person_X + 1;
+		if (SokoBanMap[rightPos][Person_Y] == POSITION) {
+			return;
+		}
+		if (SokoBanMap[rightPos][Person_Y] == POSITION) {
+			return;
+		}
 		if (SokoBanMap[rightPos + 1][Person_Y] == SOKO) {
 			if (SokoBanMap[rightPos][Person_Y] == BOX) {
+				insertUndoMap();
 				SokoBanMap[rightPos + 1][Person_Y] = BOX;
 			}
 			bMoveFlg = true;
+			
 		}
 		else if (SokoBanMap[rightPos + 1][Person_Y] == POSITION) {
-			SokoBanMap[rightPos + 1][Person_Y] = BOX_OVER;
+			if (SokoBanMap[rightPos][Person_Y] == BOX) {
+				insertUndoMap();
+				SokoBanMap[rightPos + 1][Person_Y] = BOX_OVER;
+			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[rightPos][Person_Y] == SOKO) {
@@ -139,19 +183,15 @@ function move_right() {
 		}
 	}
 	if (bMoveFlg) {
+		iSokoBanStep++;
+		redoList.length = 0;
+		iRedoCount = 0;
 		context.clearRect(0, 0, context.width, context.height);
 		context.beginPath();
 		SokoBanMap[rightPos][Person_Y] = PERSON;
 		SokoBanMap[Person_X][Person_Y] = SOKO;
 		Person_X = rightPos;
-		for (var i = 0; i < X_SIZE; i++) {
-			for (var j = 0; j < Y_SIZE; j++) {
-				var image = getBlockMap(SokoBanMap[i][j]);
-				if (image != null) {
-					context.drawImage(image, i * UNITX, j * UNITY);
-				}
-			}
-		}
+		drawSokoban();
 		context.closePath();
 	}
 	if (getPositionNum() == 0) {
@@ -164,14 +204,21 @@ function move_up() {
 	var bMoveFlg = false;
 	if (Person_Y - 1 >= 0) {
 		upPos = Person_Y - 1;
+		if (SokoBanMap[Person_X][upPos] == POSITION) {
+			return;
+		}
 		if (SokoBanMap[Person_X][upPos - 1] == SOKO) {
 			if (SokoBanMap[Person_X][upPos] == BOX) {
+				insertUndoMap();
 				SokoBanMap[Person_X][upPos - 1] = BOX;
 			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[Person_X][upPos - 1] == POSITION) {
-			SokoBanMap[Person_X][upPos - 1] = BOX_OVER;
+			if (SokoBanMap[Person_X][upPos] == BOX) {
+				insertUndoMap();
+				SokoBanMap[Person_X][upPos - 1] = BOX_OVER;				
+			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[Person_X][upPos] == SOKO) {
@@ -179,19 +226,15 @@ function move_up() {
 		}
 	}
 	if (bMoveFlg) {
+		iSokoBanStep++;
+		redoList.length = 0;
+		iRedoCount = 0;
 		context.clearRect(0, 0, context.width, context.height);
 		context.beginPath();
 		SokoBanMap[Person_X][upPos] = PERSON;
 		SokoBanMap[Person_X][Person_Y] = SOKO;
 		Person_Y = upPos;
-		for (var i = 0; i < X_SIZE; i++) {
-			for (var j = 0; j < Y_SIZE; j++) {
-				var image = getBlockMap(SokoBanMap[i][j]);
-				if (image != null) {
-					context.drawImage(image, i * UNITX, j * UNITY);
-				}
-			}
-		}
+		drawSokoban();
 		context.closePath();
 	}	
 	if (getPositionNum() == 0) {
@@ -206,14 +249,21 @@ function move_down() {
 	var bMoveFlg = false;
 	if (Person_Y + 1 < Y_SIZE) {
 		downPos = Person_Y + 1;
+		if (SokoBanMap[Person_X][downPos] == POSITION) {
+			return;
+		}
 		if (SokoBanMap[Person_X][downPos + 1] == SOKO) {
 			if (SokoBanMap[Person_X][downPos] == BOX) {
+				insertUndoMap();
 				SokoBanMap[Person_X][downPos + 1] = BOX;
 			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[Person_X][downPos + 1] == POSITION) {
-			SokoBanMap[Person_X][downPos + 1] = BOX_OVER;
+			if (SokoBanMap[Person_X][downPos] == BOX) {
+				insertUndoMap();
+				SokoBanMap[Person_X][downPos + 1] = BOX_OVER;
+			}
 			bMoveFlg = true;
 		}
 		else if (SokoBanMap[Person_X][downPos] == SOKO) {
@@ -221,24 +271,62 @@ function move_down() {
 		}
 	}
 	if (bMoveFlg) {
+		iSokoBanStep++;
+		redoList.length = 0;
+		iRedoCount = 0;
 		context.clearRect(0, 0, context.width, context.height);
 		context.beginPath();
 		SokoBanMap[Person_X][downPos] = PERSON;
 		SokoBanMap[Person_X][Person_Y] = SOKO;
 		Person_Y = downPos;
-		for (var i = 0; i < X_SIZE; i++) {
-			for (var j = 0; j < Y_SIZE; j++) {
-				var image = getBlockMap(SokoBanMap[i][j]);
-				if (image != null) {
-					context.drawImage(image, i * UNITX, j * UNITY);
-				}
-			}
-		}
+		drawSokoban();
 		context.closePath();
 	}
 	if (getPositionNum() == 0) {
 		levelUp(currentLevel + 1);
 	}
+}
+
+// Undo
+function undoSokoBan() {
+	console.log(undoList.length);
+	insertRedoMap();
+	if (undoList.length == 0) {
+		return;
+	}
+	var undoMap = undoList.pop();
+	for (var i = 0; i < X_SIZE; i++) {
+		for (var j = 0; j < Y_SIZE; j++) {
+			SokoBanMap[i][j] = undoMap[i][j];
+			if (SokoBanMap[i][j] == PERSON) {
+				Person_X = i;
+				Person_Y = j;
+			}
+		}
+	}
+	drawSokoban();
+	iUndoCount--;
+}
+
+// Redo
+function redoSokoBan() {
+	console.log("redo");
+	insertUndoMap();
+	if (redoList.length == 0) {
+		return;
+	}
+	var redoMap = redoList.pop();
+	for (var i = 0; i < X_SIZE; i++) {
+		for (var j = 0; j < Y_SIZE; j++) {
+			SokoBanMap[i][j] = redoMap[i][j];
+			if (SokoBanMap[i][j] == PERSON) {
+				Person_X = i;
+				Person_Y = j;
+			}
+		}
+	}
+	drawSokoban();
+	iRedoCount--;
 }
 
 // window key
@@ -260,6 +348,14 @@ window.onkeydown = function(e) {
     case "ArrowDown":
     case 40: // down arrow keyCode
       move_down();
+      break;
+     case "r":
+     case 82:
+      redoSokoBan();
+      break;
+     case "u":
+     case 85:
+      undoSokoBan();
       break;
   }
 }
@@ -1006,3 +1102,49 @@ function getPositionNum() {
 	
 	return iPNum;
 }
+
+// Insert Undo Map
+function insertUndoMap() {
+	iUndoCount++;
+	var undoSokoBanMap = new Array(X_SIZE);
+	for (var i = 0; i < undoSokoBanMap.length; i++) {
+		undoSokoBanMap[i] = new Array(Y_SIZE);
+	}
+	for (var i = 0; i < X_SIZE; i++) {
+		for (var j = 0; j < Y_SIZE; j++) {
+			undoSokoBanMap[i][j] = SokoBanMap[i][j];
+		}
+	}
+	undoList.push(undoSokoBanMap);
+}
+
+// Insert Redo Map
+function insertRedoMap() {
+	iRedoCount++;
+	var redoSokoBanMap = new Array(X_SIZE);
+	for (var i = 0; i < redoSokoBanMap.length; i++) {
+		redoSokoBanMap[i] = new Array(Y_SIZE);
+	}
+	for (var i = 0; i < X_SIZE; i++) {
+		for (var j = 0; j < Y_SIZE; j++) {
+			redoSokoBanMap[i][j] = SokoBanMap[i][j];
+		}
+	}
+	redoList.push(redoSokoBanMap);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
