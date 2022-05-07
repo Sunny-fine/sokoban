@@ -106,18 +106,20 @@ function drawSokoban() {
 	pSteps.innerHTML = "Move: " + iSokoBanStep;
 }
 
+
 // move to left
-function move_left() { 
+async function move_left() { 
 	var bMoveFlg = false;
 	if (Person_X - 1 >= 0) {
 		leftPos = Person_X - 1;
 		if (SokoBanMap[leftPos][Person_Y] == POSITION) {
 			return;
 		}
-		if (SokoBanMap[leftPos][Person_Y] == POSITION) {
-			return;
+		if (SokoBanMap[leftPos][Person_Y] == BOX_OVER) {
+			SokoBanMap[leftPos][Person_Y] = PERSON;
+			bMoveFlg = true;
 		}
-		if (SokoBanMap[leftPos - 1][Person_Y] == SOKO) {
+		else if (SokoBanMap[leftPos - 1][Person_Y] == SOKO) {
 			if (SokoBanMap[leftPos][Person_Y] == BOX) {
 				insertUndoMap();
 				SokoBanMap[leftPos - 1][Person_Y] = BOX;
@@ -160,10 +162,11 @@ function move_right() {
 		if (SokoBanMap[rightPos][Person_Y] == POSITION) {
 			return;
 		}
-		if (SokoBanMap[rightPos][Person_Y] == POSITION) {
-			return;
+		if (SokoBanMap[rightPos][Person_Y] == BOX_OVER) {
+			SokoBanMap[rightPos][Person_Y] = PERSON;
+			bMoveFlg = true;
 		}
-		if (SokoBanMap[rightPos + 1][Person_Y] == SOKO) {
+		else if (SokoBanMap[rightPos + 1][Person_Y] == SOKO) {
 			if (SokoBanMap[rightPos][Person_Y] == BOX) {
 				insertUndoMap();
 				SokoBanMap[rightPos + 1][Person_Y] = BOX;
@@ -207,7 +210,11 @@ function move_up() {
 		if (SokoBanMap[Person_X][upPos] == POSITION) {
 			return;
 		}
-		if (SokoBanMap[Person_X][upPos - 1] == SOKO) {
+		if (SokoBanMap[Person_X][upPos] == BOX_OVER) {
+			SokoBanMap[Person_X][upPos] = PERSON;
+			bMoveFlg = true;
+		}
+		else if (SokoBanMap[Person_X][upPos - 1] == SOKO) {
 			if (SokoBanMap[Person_X][upPos] == BOX) {
 				insertUndoMap();
 				SokoBanMap[Person_X][upPos - 1] = BOX;
@@ -252,7 +259,11 @@ function move_down() {
 		if (SokoBanMap[Person_X][downPos] == POSITION) {
 			return;
 		}
-		if (SokoBanMap[Person_X][downPos + 1] == SOKO) {
+		if (SokoBanMap[Person_X][downPos] == BOX_OVER) {
+			SokoBanMap[Person_X][downPos] = PERSON;
+			bMoveFlg = true;
+		}		
+		else if (SokoBanMap[Person_X][downPos + 1] == SOKO) {
 			if (SokoBanMap[Person_X][downPos] == BOX) {
 				insertUndoMap();
 				SokoBanMap[Person_X][downPos + 1] = BOX;
@@ -602,7 +613,7 @@ function preCreateSokoBan(iLevel) {
 			iPositionNum++;
 			SokoBanMap[5][8] = POSITION;
 			iPositionNum++;
-			SokoBanMap[6][8] = BOX_OVER;
+			SokoBanMap[6][8] = SOKO;
 			SokoBanMap[7][8] = POSITION;
 			iPositionNum++;
 			SokoBanMap[8][8] = WALL;
